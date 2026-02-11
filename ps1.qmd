@@ -1,6 +1,349 @@
 ---
 title: "ps1"
-format: html
+format: pdf
+tables: TRUE 
 ---
 
 "Initial Project Setup"
+
+GitHub Repository: <https://github.com/meganmartinez-25/Gov51-ps1.git>
+
+#Part 2
+
+1.  
+
+```{r, include = FALSE}
+#Loading tidyverse and reading in my ACS data
+library(tidyverse)
+acs2024_raw <- read.csv("gov51-ps1/data/raw/acs2024.csv")
+
+```
+
+2.  Variables: STATEFIP = State (FIPS code), SEX= (Sex), AGE = (Age), EDUC = Education attainment (general version), EMPSTAT = Employement status (general version), INCTOT = Total Personal Income, TRANTIME = Travel Time to Work. For TRANTIME, 000 signifies N/A. THE PERWT is attempting to describe how many people in the population are represented by each "sample case."
+
+3.  
+
+```{r}
+
+acs2024 <-acs2024_raw %>% 
+  select("STATEFIP", "SEX", "AGE", "EDUC", "EMPSTAT","INCTOT","TRANTIME") %>% 
+  mutate(female = if_else(SEX == 2, 1, 0), 
+  less_than_hs = if_else(EDUC %in% c(1,2), 1, 0),
+  hs_only = if_else(EDUC %in% c(3,4,5,6), 1, 0), 
+  some_college = if_else(EDUC %in% c(7,8,9), 1, 0), 
+  college_only = if_else(EDUC == 10,1,0),
+  advanced_degree = if_else(EDUC == 11, 1, 0)) |> 
+  
+  mutate(employed = if_else(EMPSTAT == 1, 1, 0, 
+              if_else(EMPSTAT %in% c(0,9), NA_integer_, 0)),
+  unemployed = if_else(EMPSTAT == 2, 1, 0, 
+                if_else(EMPSTAT %in% c(0,9), NA_integer_, 0)), 
+  not_in_labor_force = if_else(EMPSTAT == 3, 1, 0, 
+   if_else(EMPSTAT %in% c(0,9), NA_integer_, 0))) |>
+  mutate(INCTOT = if_else(INCTOT %in% c(9999999, 9999998), NA_real_, INCTOT))
+
+#question about the NA_character
+#do i need to mutate TRANTIME on this one yet? 
+
+```
+
+4.  If you treated N/A codes as real zeroes when calculating summary statistics, this would skew the data to the left, because for a variable that is not supposed to have any 0 values, if there is even one, with a range from 0 to 888, having zeroes part of the final calculation will cause the mean, or average, to lower which will depict a smaller average commute time in minutes.
+
+```{r}
+
+library(knitr)
+
+acs2024_rename <- acs2024 %>% 
+  rename( "Age" = "AGE", 
+     "Female" = "female" , 
+     "Less than High School"= "less_than_hs" , 
+     "High School Only"= "hs_only",
+     "Some College" = "some_college" , 
+     "College Only"= "college_only" , 
+    "Advanced Degree" = "advanced_degree" , 
+   "Employed" =  "employed" , 
+     "Unemployed" = "unemployed" , 
+     "Not in Labor Force" = "not_in_labor_force", 
+     "Commute Time (mins)" = "TRANTIME", 
+    "Total Income ($)" = "INCTOT")
+
+acs2024_stats <- data.frame(
+  Variable = c("Age", "Female", "Less than High School", "High School Only",  "Some College", "College Only", "Advanced Degree", "Employed", "Unemployed", "Not in Labor Force", "Commute Time (mins)", "Total Income ($)"),
+  N = c(length(acs2024_rename$`Age`),
+        length(acs2024_rename$`Female`),
+        length(acs2024_rename$`Less than High School`),
+        length(acs2024_rename$`High School Only`),
+        length(acs2024_rename$`Some College`),
+        length(acs2024_rename$`College Only`),
+        length(acs2024_rename$`Advanced Degree`),
+        length(acs2024_rename$`Employed`),
+        length(acs2024_rename$`Unemployed`),
+        length(acs2024_rename$`Not in Labor Force`),
+        length(acs2024_rename$`Commute Time (mins)`),
+        length(acs2024_rename$`Total Income ($)`)),
+  Mean = c(mean(acs2024_rename$`Age`),
+           mean(acs2024_rename$`Female`), 
+           mean(acs2024_rename$`Less than High School`),
+           mean(acs2024_rename$`High School Only`), 
+           mean(acs2024_rename$`Some College`),
+           mean(acs2024_rename$`College Only`),
+           mean(acs2024_rename$`Advanced Degree`), 
+           mean(acs2024_rename$`Employed`),
+           mean(acs2024_rename$`Unemployed`), 
+           mean(acs2024_rename$`Not in Labor Force`),
+           mean(acs2024_rename$`Commute Time (mins)`),
+           mean(acs2024_rename$`Total Income ($)`, na.rm = TRUE)),
+  SD = c(sd(acs2024_rename$`Age`),
+         sd(acs2024_rename$`Female`), 
+         sd(acs2024_rename$`Less than High School`),
+         sd(acs2024_rename$`High School Only`), 
+         sd(acs2024_rename$`Some College`),
+         sd(acs2024_rename$`College Only`), 
+         sd(acs2024_rename$`Advanced Degree`),
+         sd(acs2024_rename$`Employed`), 
+         sd(acs2024_rename$`Unemployed`),
+         sd(acs2024_rename$`Not in Labor Force`), 
+         sd(acs2024_rename$`Commute Time (mins)`),
+         sd(acs2024_rename$`Total Income ($)`, na.rm=TRUE)),
+  Min = c(min(acs2024_rename$`Age`),
+          min(acs2024_rename$`Female`), 
+          min(acs2024_rename$`Less than High School`),
+          min(acs2024_rename$`High School Only`), 
+          min(acs2024_rename$`Some College`),
+          min(acs2024_rename$`College Only`), 
+          min(acs2024_rename$`Advanced Degree`),
+          min(acs2024_rename$`Employed`), 
+          min(acs2024_rename$`Unemployed`),
+          min(acs2024_rename$`Not in Labor Force`), 
+          min(acs2024_rename$`Commute Time (mins)`),
+          min(acs2024_rename$`Total Income ($)`, na.rm = TRUE)),
+  Max = c(max(acs2024_rename$`Age`),
+          max(acs2024_rename$`Female`), 
+          max(acs2024_rename$`Less than High School`),
+          max(acs2024_rename$`High School Only`), 
+          max(acs2024_rename$`Some College`),
+          max(acs2024_rename$`College Only`), 
+          max(acs2024_rename$`Advanced Degree`),
+          max(acs2024_rename$`Employed`), 
+          max(acs2024_rename$`Unemployed`),
+          max(acs2024_rename$`Not in Labor Force`), 
+          max(acs2024_rename$`Commute Time (mins)`),
+          max(acs2024_rename$`Total Income ($)`, na.rm = TRUE))) %>% 
+  knitr::kable(caption = "Summary Statistics for 2024 ACS Sample",
+               format = "latex", 
+               booktabs = TRUE,
+               digits = 2)
+               
+acs2024_stats
+
+
+
+```
+
+```{r}
+acs2024_rename <- acs2024 %>%
+  rename( "Age" = "AGE", 
+     "Female" = "female" , 
+     "Less than High School"= "less_than_hs" , 
+     "High School Only"= "hs_only",
+     "Some College" = "some_college" , 
+    "College Only"= "college_only" , 
+    "Advanced Degree" = "advanced_degree" , 
+   "Employed" =  "employed" , 
+     "Unemployed" = "unemployed" , 
+     "Not in Labor Force" = "not_in_labor_force", 
+     "Commute Time (mins)" = "TRANTIME", 
+    "Total Income ($)" = "INCTOT")
+
+library(modelsummary)
+acs2024_table <- datasummary(
+  `Age` + `Female` + `Less than High School` + `High School Only` + `Some College` + `College Only` +  `Advanced Degree` + `Employed` + `Unemployed` + `Not in Labor Force` + `Commute Time (mins)` + `Total Income ($)` ~ N + Mean + SD + Min + Max, 
+  data= acs2024_rename, 
+  title = "Summary Statistics for 2024 ACS Sample", 
+   output = "latex"
+  )
+
+
+```
+
+
+6.Does the maximum commute time make sense for a daily commute? Write 1–2 sentences
+Yes, this makes sense because if the maximum is 195 minutes, this is approximately 3.25 hours spent on a commute, which can become tiresome, but if it is mandatory and one often gets caught in traffic, this can become a reality for many people. 
+
+
+#Analysis Section 
+
+```{r, include=FALSE}
+
+acs2024$TRANTIME
+
+sum(acs2024_raw$TRANTIME == 0, na.rm = TRUE)
+length(acs2024_raw$TRANTIME)
+
+acs2024_raw$TRANTIME
+```
+
+1.  2062945 people have 0 minute commute time, there are a total number of 3422888 people. 60.27% of total commuters do not have a commuter time at all.
+
+2.  People who would not have a commuter time would be children, retirees, unemployed people, remote workers, and people who carpool to the work.
+
+```{r, include=FALSE}
+commuters <- acs2024_rename %>% 
+  filter(`Commute Time (mins)` != 0)
+#acs2024_commuters<- acs2024 %>% 
+#    mutate(commuters = if_else(TRANTIME %in% c(0, 888), NA_real_, TRANTIME))
+
+
+
+
+
+#commuters variable 
+```
+
+#are we allowed to use some of the suggestions he provided? 3. My criteria for the commuters variable was anyone with a commuter time greater than 0 and not inclusive of 888. This is because 000 signifies "N/A" and 888 is coded to "Suppress for data year 2023 for select PUMAs." Therefore, my eliminating these from being included in the commuters variable and reclassifying as N/A these values are unable to impact the data and the summary of the variable.
+
+```{r}
+#sum data where it is not 0 or 888
+sum(acs2024$commuters !=0 & acs2024$commuters !=888, na.rm = TRUE)
+
+
+```
+
+#is that correct code to be using? 3. There are 1359943 commuters left, which matches the remaining numbers that do not equal 0 or 888, after you subtract 3,422,888-2,062,945 (subtracting the total numebr of individuals - those who do not have a commute time).
+
+```{r}
+summary(acs2024$commuters)
+```
+
+3b. The minimum is 1.00 minute. This does not seem very feasible, but if someone were to live next to where they work, this could be a plausible explanation for having a 1 minute commute time.
+
+```{r}
+library(knitr)
+
+acs2024_rename <- acs2024 %>% 
+  rename( "Age" = "AGE", 
+     "Female" = "female" , 
+     "Less than High School"= "less_than_hs" , 
+     "High School Only"= "hs_only",
+     "Some College" = "some_college" , 
+     "College Only"= "college_only" , 
+    "Advanced Degree" = "advanced_degree" , 
+   "Employed" =  "employed" , 
+     "Unemployed" = "unemployed" , 
+     "Not in Labor Force" = "not_in_labor_force", 
+     "Commute Time (mins)" = "TRANTIME", 
+    "Total Income ($)" = "INCTOT")
+
+acs2024_commuter <- data.frame(
+  Variable = c("Age", "Female", "Less than High School", "High School Only",  "Some College", "College Only", "Advanced Degree", "Employed", "Unemployed", "Not in Labor Force", "Commute Time (mins)", "Total Income ($)"),
+  N = c(length(commuters$`Age`),
+        length(commuters$`Female`),
+        length(commuters$`Less than High School`),
+        length(commuters$`High School Only`),
+        length(commuters$`Some College`),
+        length(commuters$`College Only`),
+        length(commuters$`Advanced Degree`),
+        length(commuters$`Employed`),
+        length(commuters$`Unemployed`),
+        length(commuters$`Not in Labor Force`),
+        length(commuters$`Commute Time (mins)`),
+        length(commuters$`Total Income ($)`)),
+  Mean = c(mean(commuters$`Age`),
+           mean(commuters$`Female`), 
+           mean(commuters$`Less than High School`),
+           mean(commuters$`High School Only`), 
+           mean(commuters$`Some College`),
+           mean(commuters$`College Only`),
+           mean(commuters$`Advanced Degree`), 
+           mean(commuters$`Employed`),
+           mean(commuters$`Unemployed`), 
+           mean(commuters$`Not in Labor Force`),
+           mean(commuters$`Commute Time (mins)`),
+           mean(commuters$`Total Income ($)`, na.rm = TRUE)),
+  SD = c(sd(commuters$`Age`),
+         sd(commuters$`Female`), 
+         sd(commuters$`Less than High School`),
+         sd(commuters$`High School Only`), 
+         sd(commuters$`Some College`),
+         sd(commuters$`College Only`), 
+         sd(commuters$`Advanced Degree`),
+         sd(commuters$`Employed`), 
+         sd(commuters$`Unemployed`),
+         sd(commuters$`Not in Labor Force`), 
+         sd(commuters$`Commute Time (mins)`),
+         sd(commuters$`Total Income ($)`, na.rm=TRUE)),
+  Min = c(min(commuters$`Age`),
+          min(commuters$`Female`), 
+          min(commuters$`Less than High School`),
+          min(commuters$`High School Only`), 
+          min(commuters$`Some College`),
+          min(commuters$`College Only`), 
+          min(commuters$`Advanced Degree`),
+          min(commuters$`Employed`), 
+          min(commuters$`Unemployed`),
+          min(commuters$`Not in Labor Force`), 
+          min(commuters$`Commute Time (mins)`),
+          min(commuters$`Total Income ($)`, na.rm = TRUE)),
+  Max = c(max(commuters$`Age`),
+          max(commuters$`Female`), 
+          max(commuters$`Less than High School`),
+          max(commuters$`High School Only`), 
+          max(commuters$`Some College`),
+          max(commuters$`College Only`), 
+          max(commuters$`Advanced Degree`),
+          max(commuters$`Employed`), 
+          max(commuters$`Unemployed`),
+          max(commuters$`Not in Labor Force`), 
+          max(commuters$`Commute Time (mins)`),
+          max(commuters$`Total Income ($)`, na.rm = TRUE))) %>% 
+  knitr::kable(caption = "Summary Statistics for 2024 ACS Sample",
+               format = "latex", 
+               booktabs = TRUE,
+               digits = 2)
+               
+acs2024_commuter
+               
+```
+
+```{r}
+acs2024 <-acs2024_raw %>% 
+  select("STATEFIP", "SEX", "AGE", "EDUC", "EMPSTAT","INCTOT","TRANTIME") %>% 
+  mutate(female = if_else(SEX == 2, 1, 0), 
+  less_than_hs = if_else(EDUC %in% c(1,2), 1, 0),
+  hs_only = if_else(EDUC %in% c(3,4,5,6), 1, 0), 
+  some_college = if_else(EDUC %in% c(7,8,9), 1, 0), 
+  college_only = if_else(EDUC ==  10,1,0),
+  advanced_degree = if_else(EDUC == 11, 1, 0)) |> 
+  
+  mutate(employed = if_else(EMPSTAT == 1, 1, 0, 
+              if_else(EMPSTAT %in% c(0,9), NA_integer_, 0)),
+  unemployed = if_else(EMPSTAT == 2, 1, 0, 
+                if_else(EMPSTAT %in% c(0,9), NA_integer_, 0)), 
+  not_in_labor_force = if_else(EMPSTAT == 3, 1, 0, 
+   if_else(EMPSTAT %in% c(0,9), NA_integer_, 0))) |>
+  mutate(INCTOT = if_else(INCTOT %in% c(9999999, 9999998), NA_real_, INCTOT)) %>% 
+   mutate(commuters = if_else(TRANTIME %in% c(0, 888), NA_real_, TRANTIME))
+
+
+acs2024_rename <- acs2024 %>% 
+  rename( "Age" = "AGE", 
+     "Female" = "female" , 
+     "Less than High School"= "less_than_hs" , 
+     "High School Only"= "hs_only",
+     "Some College" = "some_college" , 
+     "College Only"= "college_only" , 
+    "Advanced Degree" = "advanced_degree" , 
+   "Employed" =  "employed" , 
+     "Unemployed" = "unemployed" , 
+     "Not in Labor Force" = "not_in_labor_force", 
+   "Commute Time (mins)" = "TRANTIME",
+     "Commute Time (mins)-Analytical" = "commuters", 
+    "Total Income ($)" = "INCTOT")
+
+library(modelsummary)
+acs2024_table <- datasummary(
+  `Age` + `Female` + `Less than High School` + `High School Only` + `Some College` + `College Only` +  `Advanced Degree` + `Employed` + `Unemployed` + `Not in Labor Force` + `Commute Time (mins)` + `Total Income ($)` ~ N + Mean + SD + Min + Max, 
+  data= acs2024_rename, 
+  title = "Table 1: Summary Statistics for 2024 ACS Sample"
+  )
+```
