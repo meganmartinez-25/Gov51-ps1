@@ -25,8 +25,9 @@ acs2024_raw <- read.csv("gov51-ps1/data/raw/acs2024.csv")
 
 ```{r}
 
+
 acs2024 <-acs2024_raw %>% 
-  select("STATEFIP", "SEX", "AGE", "EDUC", "EMPSTAT","INCTOT","TRANTIME") %>% 
+  select("STATEFIP", "SEX", "AGE", "EDUC", "EMPSTAT","INCTOT","TRANTIME", "PERWT") %>% 
   mutate(female = if_else(SEX == 2, 1, 0), 
   less_than_hs = if_else(EDUC %in% c(1,2), 1, 0),
   hs_only = if_else(EDUC %in% c(3,4,5,6), 1, 0), 
@@ -40,10 +41,11 @@ acs2024 <-acs2024_raw %>%
                 if_else(EMPSTAT %in% c(0,9), NA_integer_, 0)), 
   not_in_labor_force = if_else(EMPSTAT == 3, 1, 0, 
    if_else(EMPSTAT %in% c(0,9), NA_integer_, 0))) |>
-  mutate(INCTOT = if_else(INCTOT %in% c(9999999, 9999998), NA_real_, INCTOT))
+  mutate(INCTOT = if_else(INCTOT >= c(9999999, 9999998), NA_real_, INCTOT))
 
 #question about the NA_character
 #do i need to mutate TRANTIME on this one yet? 
+
 
 ```
 
@@ -65,22 +67,23 @@ acs2024_rename <- acs2024 %>%
      "Unemployed" = "unemployed" , 
      "Not in Labor Force" = "not_in_labor_force", 
      "Commute Time (mins)" = "TRANTIME", 
-    "Total Income ($)" = "INCTOT")
+    "Total Income ($)" = "INCTOT", 
+   "PERWT"= "PERWT")
 
 acs2024_stats <- data.frame(
   Variable = c("Age", "Female", "Less than High School", "High School Only",  "Some College", "College Only", "Advanced Degree", "Employed", "Unemployed", "Not in Labor Force", "Commute Time (mins)", "Total Income ($)"),
-  N = c(length(acs2024_rename$`Age`),
-        length(acs2024_rename$`Female`),
-        length(acs2024_rename$`Less than High School`),
-        length(acs2024_rename$`High School Only`),
-        length(acs2024_rename$`Some College`),
-        length(acs2024_rename$`College Only`),
-        length(acs2024_rename$`Advanced Degree`),
-        length(acs2024_rename$`Employed`),
-        length(acs2024_rename$`Unemployed`),
-        length(acs2024_rename$`Not in Labor Force`),
-        length(acs2024_rename$`Commute Time (mins)`),
-        length(acs2024_rename$`Total Income ($)`)),
+  N = c(sum(!is.na(acs2024_rename$`Age`)),
+        sum(!is.na(acs2024_rename$`Female`)),
+        sum(!is.na(acs2024_rename$`Less than High School`)),
+        sum(!is.na(acs2024_rename$`High School Only`)),
+        sum(!is.na(acs2024_rename$`Some College`)),
+        sum(!is.na(acs2024_rename$`College Only`)),
+        sum(!is.na(acs2024_rename$`Advanced Degree`)),
+        sum(!is.na(acs2024_rename$`Employed`)),
+        sum(!is.na(acs2024_rename$`Unemployed`)),
+        sum(!is.na(acs2024_rename$`Not in Labor Force`)),
+        sum(!is.na(acs2024_rename$`Commute Time (mins)`)),
+        sum(!is.na(acs2024_rename$`Total Income ($)`))),
   Mean = c(mean(acs2024_rename$`Age`),
            mean(acs2024_rename$`Female`), 
            mean(acs2024_rename$`Less than High School`),
@@ -140,31 +143,6 @@ acs2024_stats
 
 ```
 
-```{r}
-acs2024_rename <- acs2024 %>%
-  rename( "Age" = "AGE", 
-     "Female" = "female" , 
-     "Less than High School"= "less_than_hs" , 
-     "High School Only"= "hs_only",
-     "Some College" = "some_college" , 
-    "College Only"= "college_only" , 
-    "Advanced Degree" = "advanced_degree" , 
-   "Employed" =  "employed" , 
-     "Unemployed" = "unemployed" , 
-     "Not in Labor Force" = "not_in_labor_force", 
-     "Commute Time (mins)" = "TRANTIME", 
-    "Total Income ($)" = "INCTOT")
-
-library(modelsummary)
-acs2024_table <- datasummary(
-  `Age` + `Female` + `Less than High School` + `High School Only` + `Some College` + `College Only` +  `Advanced Degree` + `Employed` + `Unemployed` + `Not in Labor Force` + `Commute Time (mins)` + `Total Income ($)` ~ N + Mean + SD + Min + Max, 
-  data= acs2024_rename, 
-  title = "Summary Statistics for 2024 ACS Sample", 
-   output = "latex"
-  )
-
-
-```
 
 
 6.Does the maximum commute time make sense for a daily commute? Write 1–2 sentences
@@ -194,7 +172,7 @@ commuters <- acs2024_rename %>%
 #    mutate(commuters = if_else(TRANTIME %in% c(0, 888), NA_real_, TRANTIME))
 
 
-
+commuters$`Commute Time (mins)`
 
 
 #commuters variable 
@@ -232,7 +210,8 @@ acs2024_rename <- acs2024 %>%
      "Unemployed" = "unemployed" , 
      "Not in Labor Force" = "not_in_labor_force", 
      "Commute Time (mins)" = "TRANTIME", 
-    "Total Income ($)" = "INCTOT")
+    "Total Income ($)" = "INCTOT", 
+   "PERWT" = "PERWT")
 
 acs2024_commuter <- data.frame(
   Variable = c("Age", "Female", "Less than High School", "High School Only",  "Some College", "College Only", "Advanced Degree", "Employed", "Unemployed", "Not in Labor Force", "Commute Time (mins)", "Total Income ($)"),
@@ -305,45 +284,66 @@ acs2024_commuter
                
 ```
 
+
+
+#Commuters Subset Created 
+
+Part 4: 
+
 ```{r}
-acs2024 <-acs2024_raw %>% 
-  select("STATEFIP", "SEX", "AGE", "EDUC", "EMPSTAT","INCTOT","TRANTIME") %>% 
-  mutate(female = if_else(SEX == 2, 1, 0), 
-  less_than_hs = if_else(EDUC %in% c(1,2), 1, 0),
-  hs_only = if_else(EDUC %in% c(3,4,5,6), 1, 0), 
-  some_college = if_else(EDUC %in% c(7,8,9), 1, 0), 
-  college_only = if_else(EDUC ==  10,1,0),
-  advanced_degree = if_else(EDUC == 11, 1, 0)) |> 
-  
-  mutate(employed = if_else(EMPSTAT == 1, 1, 0, 
-              if_else(EMPSTAT %in% c(0,9), NA_integer_, 0)),
-  unemployed = if_else(EMPSTAT == 2, 1, 0, 
-                if_else(EMPSTAT %in% c(0,9), NA_integer_, 0)), 
-  not_in_labor_force = if_else(EMPSTAT == 3, 1, 0, 
-   if_else(EMPSTAT %in% c(0,9), NA_integer_, 0))) |>
-  mutate(INCTOT = if_else(INCTOT %in% c(9999999, 9999998), NA_real_, INCTOT)) %>% 
-   mutate(commuters = if_else(TRANTIME %in% c(0, 888), NA_real_, TRANTIME))
+acs_hist <- ggplot(commuters, aes(x = `Commute Time (mins)`)) +
+  geom_histogram(binwidth = 5, fill = "steelblue", color = "white") +
+  labs(x = "Commute Time (mins)",
+       y = "Individuals who have a Commute",
+       title = "Commute Times for Individuals (in minutes)") +
+  geom_vline(xintercept = mean(commuters$`Commute Time (mins)`),
+             color = "red", linetype = "dashed", linewidth = 1) +
+  geom_vline(xintercept = median(commuters$`Commute Time (mins)`),
+             color = "darkgreen", linetype = "dashed", linewidth = 1) 
 
+acs_hist
 
-acs2024_rename <- acs2024 %>% 
-  rename( "Age" = "AGE", 
-     "Female" = "female" , 
-     "Less than High School"= "less_than_hs" , 
-     "High School Only"= "hs_only",
-     "Some College" = "some_college" , 
-     "College Only"= "college_only" , 
-    "Advanced Degree" = "advanced_degree" , 
-   "Employed" =  "employed" , 
-     "Unemployed" = "unemployed" , 
-     "Not in Labor Force" = "not_in_labor_force", 
-   "Commute Time (mins)" = "TRANTIME",
-     "Commute Time (mins)-Analytical" = "commuters", 
-    "Total Income ($)" = "INCTOT")
-
-library(modelsummary)
-acs2024_table <- datasummary(
-  `Age` + `Female` + `Less than High School` + `High School Only` + `Some College` + `College Only` +  `Advanced Degree` + `Employed` + `Unemployed` + `Not in Labor Force` + `Commute Time (mins)` + `Total Income ($)` ~ N + Mean + SD + Min + Max, 
-  data= acs2024_rename, 
-  title = "Table 1: Summary Statistics for 2024 ACS Sample"
-  )
 ```
+```{r}
+median(commuters$`Commute Time (mins)`)
+```
+
+2. The histogram for individuals who have a commute time is skewed to the right, with a long tail. There also appears to be a cluster of individuals around the 125-150 minutes, that could be considered outliers from the data set, while the rest of the data is centered around individuals with a commuting time from 0 to 50 minutes. The median of the data is 20 minutes, but the highest peaks of the data are around  10-20 minutes, with a dip at 25 minutes, and a peak again at a 30 minute commute. 
+
+3. The mean commute time of (27.22 mins) is greater than the median commute time of 20 minutes, which is understandable because the cluster of commuters whose travel takes 140-155 minutes pulls the mean to the right. These larger values are outliers of individuals whose commute times take longer than the majority of commuters, and therefore, when computing the mean, these points influence the calculation, raising the mean higher than the median. This also shares insight into how the data is skewed to the right because if our mean is larger than our median, then we have more data points that are greater than the majority cluster influencing our data, which is seen in our histogram that is skewed to the right. 
+
+```{r}
+
+getwd()
+list.files()
+ggsave("gov51-ps1/output/commute_histogram.png", 
+       plot= acs_hist, 
+       device = NULL, 
+       path = NULL, 
+       scale = 1, 
+       width = NA, 
+       height= NA,
+       dpi= 300, 
+       limitsize = TRUE, 
+       bg = NULL)
+```
+
+
+?ggsave
+
+
+```{r}
+names(acs2024_raw)
+names(acs2024)
+names(acs2024_rename)
+names(commuters)
+length(commuters$`Commute Time (mins)`)
+length(commuters$PERWT)
+
+
+
+weighted.mean(commuters$`Commute Time (mins)`, commuters$PERWT, na.rm= TRUE)
+```
+
+
+3. The mean is simply the mean of the sample without accounting for how we might 
