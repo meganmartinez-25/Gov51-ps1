@@ -1,0 +1,6 @@
+.Rproj.user
+.Rhistory
+.RData
+.Ruserdata
+data/raw/acs2024_2.csv
+data/raw/acs2024.csv
