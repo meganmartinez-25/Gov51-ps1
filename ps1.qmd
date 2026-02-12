@@ -1,5 +1,6 @@
 ---
 title: "ps1"
+author: "Megan Martinez" 
 format: pdf
 tables: TRUE 
 ---
@@ -10,7 +11,7 @@ GitHub Repository: <https://github.com/meganmartinez-25/Gov51-ps1.git>
 
 #Part 2
 
-1.  
+1.
 
 ```{r, include = FALSE}
 #Loading tidyverse and reading in my ACS data
@@ -21,15 +22,13 @@ acs2024_raw <- read.csv("gov51-ps1/data/raw/acs2024.csv")
 
 2.  Variables: STATEFIP = State (FIPS code), SEX= (Sex), AGE = (Age), EDUC = Education attainment (general version), EMPSTAT = Employement status (general version), INCTOT = Total Personal Income, TRANTIME = Travel Time to Work. For TRANTIME, 000 signifies N/A. THE PERWT is attempting to describe how many people in the population are represented by each "sample case."
 
-3.  
+3. Create New Variables  
 
 ```{r}
-
-
 acs2024 <-acs2024_raw %>% 
   select("STATEFIP", "SEX", "AGE", "EDUC", "EMPSTAT","INCTOT","TRANTIME", "PERWT") %>% 
   mutate(female = if_else(SEX == 2, 1, 0), 
-  less_than_hs = if_else(EDUC %in% c(1,2), 1, 0),
+  less_than_hs = if_else(EDUC %in% c(0,1,2), 1, 0),
   hs_only = if_else(EDUC %in% c(3,4,5,6), 1, 0), 
   some_college = if_else(EDUC %in% c(7,8,9), 1, 0), 
   college_only = if_else(EDUC == 10,1,0),
@@ -49,7 +48,7 @@ acs2024 <-acs2024_raw %>%
 
 ```
 
-4.  If you treated N/A codes as real zeroes when calculating summary statistics, this would skew the data to the left, because for a variable that is not supposed to have any 0 values, if there is even one, with a range from 0 to 888, having zeroes part of the final calculation will cause the mean, or average, to lower which will depict a smaller average commute time in minutes.
+4.  If you treated N/A codes as real zeroes when calculating summary statistics, this would skew the data to the left, because for a variable that is not supposed to have any 0 values, if there is even one, with a range from 0 to 888, having zeroes part of the final calculation will cause the mean, or average, to lower which will depict a smaller average commute time in minutes than if the 0s were not included. On the other hand, if N/A was represented by a very large number, for example, for INCTOT, 9999999 signifies N/A, and you included the data points that were N/A in your final analysis, when calculating summary statistics, the mean would be greatly skewed to the right. This large value would be pulling the INCTOT mean much higher than it ought to be for it to accurately represent the total income of the sample. 
 
 ```{r}
 
@@ -145,8 +144,8 @@ acs2024_stats
 
 
 
-6.Does the maximum commute time make sense for a daily commute? Write 1–2 sentences
-Yes, this makes sense because if the maximum is 195 minutes, this is approximately 3.25 hours spent on a commute, which can become tiresome, but if it is mandatory and one often gets caught in traffic, this can become a reality for many people. 
+6.Does the maximum commute time make sense for a daily commute? 
+Yes, this makes sense because if the maximum is 195 minutes, this is approximately 3.25 hours spent on a commute, which can become tiresome, but if it is mandatory and one often gets caught in traffic, this can become a reality for many people. However, from California, this can be a reality for many, yet, it would become very tiresome and unfair to expect someone to commute for 6.5 hours daily to work. Therefore, depending on whether someone is comfortable or needs to commute that long to get to work, this commute time can be a reality, but it does not make sense or sound feasible.  
 
 
 #Analysis Section 
@@ -158,42 +157,41 @@ acs2024$TRANTIME
 sum(acs2024_raw$TRANTIME == 0, na.rm = TRUE)
 length(acs2024_raw$TRANTIME)
 
-acs2024_raw$TRANTIME
+#acs2024_raw$TRANTIME
 ```
 
 1.  2062945 people have 0 minute commute time, there are a total number of 3422888 people. 60.27% of total commuters do not have a commuter time at all.
 
-2.  People who would not have a commuter time would be children, retirees, unemployed people, remote workers, and people who carpool to the work.
+2.  People who would not have a commuter time would be children, retirees/elderly, unemployed people, remote workers, and people who carpool to their work.
 
-```{r, include=FALSE}
+```{r}
 commuters <- acs2024_rename %>% 
   filter(`Commute Time (mins)` != 0)
 #acs2024_commuters<- acs2024 %>% 
 #    mutate(commuters = if_else(TRANTIME %in% c(0, 888), NA_real_, TRANTIME))
 
-
-commuters$`Commute Time (mins)`
+#commuters$`Commute Time (mins)`
 
 
 #commuters variable 
 ```
 
-#are we allowed to use some of the suggestions he provided? 3. My criteria for the commuters variable was anyone with a commuter time greater than 0 and not inclusive of 888. This is because 000 signifies "N/A" and 888 is coded to "Suppress for data year 2023 for select PUMAs." Therefore, my eliminating these from being included in the commuters variable and reclassifying as N/A these values are unable to impact the data and the summary of the variable.
+3. My criteria for the commuters variable was anyone with a commuter time greater than 0 and not inclusive of 888. This is because 000 signifies "N/A" and 888 is coded to "Suppress for data year 2023 for select PUMAs." Therefore, my eliminating these from being included in the commuters variable and reclassifying as N/A these values are unable to impact the data and the summary of the variable. Also, I am considering anyone with a commute time greater than 0 to be a commuter because there is still time being taken to travel from work to home, and therefore, no matter how small this may be (even if it is only one minute) it is still a commute from one place to another and therefore, I considered in my data.  
 
 ```{r}
 #sum data where it is not 0 or 888
-sum(acs2024$commuters !=0 & acs2024$commuters !=888, na.rm = TRUE)
+sum(commuters$`Commute Time (mins)` !=0 & commuters$`Commute Time (mins)` !=888, na.rm = TRUE)
 
 
 ```
 
-#is that correct code to be using? 3. There are 1359943 commuters left, which matches the remaining numbers that do not equal 0 or 888, after you subtract 3,422,888-2,062,945 (subtracting the total numebr of individuals - those who do not have a commute time).
+3. There are 1359943 commuters left, which matches the remaining numbers that do not equal 0 or 888, after you subtract 3,422,888-2,062,945 (subtracting the total number of individuals - those who do not have a commute time).
 
 ```{r}
-summary(acs2024$commuters)
+summary(commuters$`Commute Time (mins`)
 ```
 
-3b. The minimum is 1.00 minute. This does not seem very feasible, but if someone were to live next to where they work, this could be a plausible explanation for having a 1 minute commute time.
+3b. The minimum is 1.00 minute. This does not seem very feasible, but if someone were to live next to where they work, this could be a plausible explanation for having a 1 minute commute time. Someone also may live in the same building as where they work and they would only have to commute to their apartment which could be a short distance. 
 
 ```{r}
 library(knitr)
@@ -294,8 +292,12 @@ Part 4:
 acs_hist <- ggplot(commuters, aes(x = `Commute Time (mins)`)) +
   geom_histogram(binwidth = 5, fill = "steelblue", color = "white") +
   labs(x = "Commute Time (mins)",
-       y = "Individuals who have a Commute",
-       title = "Commute Times for Individuals (in minutes)") +
+       y = "Number of Individuals 
+       who have a Commute",
+       title = "Distribution of Commute Times for Individuals
+       (in minutes)", 
+       caption = "Green Line: Median, 
+       Red Line: Mean") +
   geom_vline(xintercept = mean(commuters$`Commute Time (mins)`),
              color = "red", linetype = "dashed", linewidth = 1) +
   geom_vline(xintercept = median(commuters$`Commute Time (mins)`),
@@ -304,9 +306,13 @@ acs_hist <- ggplot(commuters, aes(x = `Commute Time (mins)`)) +
 acs_hist
 
 ```
+
+
+
 ```{r}
 median(commuters$`Commute Time (mins)`)
 ```
+The median is 20 minutes. 
 
 2. The histogram for individuals who have a commute time is skewed to the right, with a long tail. There also appears to be a cluster of individuals around the 125-150 minutes, that could be considered outliers from the data set, while the rest of the data is centered around individuals with a commuting time from 0 to 50 minutes. The median of the data is 20 minutes, but the highest peaks of the data are around  10-20 minutes, with a dip at 25 minutes, and a peak again at a 30 minute commute. 
 
@@ -345,5 +351,5 @@ length(commuters$PERWT)
 weighted.mean(commuters$`Commute Time (mins)`, commuters$PERWT, na.rm= TRUE)
 ```
 
-
-3. The mean is simply the mean of the sample without accounting for how we might 
+1. The weighted mean is 27.19112 or ~27.19 mins. The unweighted mean for commuters is 27.22 mins. These two means are different by .03 mins. 
+3. The weighted mean is taking the average of observations that are "weighted" by a certain characteristic that better reflects the population.  For this example, PEWRT was  how much each person represented a certain number of people in the United States, so the weighted average was attempting to look at the mean for the population as a whole. The mean is simply the mean of the sample with each individual being counted equally, and the two were slightly different because people who represented more people in the United States may have had a lower commute time, and therefore, they reflected the slightly lower weighted mean to the mean. Nevertheless, because they were so similar to one another, this could indicate that the commute time is uncorrelated to the weights, so the mean of the average commute time would be approximately the same, but because there is a slight difference likely there was a slightly larger weight for those with a smaller commute time. 
