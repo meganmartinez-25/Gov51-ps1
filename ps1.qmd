@@ -13,7 +13,7 @@ GitHub Repository: <https://github.com/meganmartinez-25/Gov51-ps1.git>
 
 1.
 
-```{r, include = FALSE}
+```{r}
 #Loading tidyverse and reading in my ACS data
 library(tidyverse)
 acs2024_raw <- read.csv("gov51-ps1/data/raw/acs2024.csv")
