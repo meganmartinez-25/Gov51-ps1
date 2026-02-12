@@ -296,8 +296,8 @@ acs_hist <- ggplot(commuters, aes(x = `Commute Time (mins)`)) +
        who have a Commute",
        title = "Distribution of Commute Times for Individuals
        (in minutes)", 
-       caption = "Green Line: Median, 
-       Red Line: Mean") +
+       caption = "Green Line: Median (20 min), 
+       Red Line: Mean(27.22 min)") +
   geom_vline(xintercept = mean(commuters$`Commute Time (mins)`),
              color = "red", linetype = "dashed", linewidth = 1) +
   geom_vline(xintercept = median(commuters$`Commute Time (mins)`),
@@ -334,7 +334,7 @@ ggsave("gov51-ps1/output/commute_histogram.png",
        bg = NULL)
 ```
 
-
+'Histogram push and save" 
 ?ggsave
 
 
